@@ -51,11 +51,6 @@ class Junta(ABC):
         """Calcula e retorna a Matriz de Transformação Homogênea"""
         pass
 
-    @abstractmethod
-    def calcular_tMat(self, axis, valor):
-        """Calcula e retorna a Matriz de Transformação Homogênea"""
-        pass
-
 
 class JuntaRevolucao(Junta):
     def __init__(self, name=None, numGL=None, frame=None, gl=None, axis="z"):
