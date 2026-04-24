@@ -1,106 +1,39 @@
-# Transformações Homogêneas
-## Translação
-$$
-\begin{bmatrix}
-x_{i+1}\\
-y_{i+1}\\
-z_{i+1}\\
-1
-\end{bmatrix}
-=
-\begin{bmatrix}
-1 & 0 & 0 & dx\\
-0 & 1 & 0 & dy\\
-0 & 0 & 1 & dz\\
-0 & 0 & 0 & 1
-\end{bmatrix}
-\begin{bmatrix}
-x_{i}\\
-y_{i}\\
-z_{i}\\
-1
-\end{bmatrix}
-$$
+# Manipuladores Roboticos - Cinematica Direta
 
-## Rotação
-### Yaw
-$$
-\begin{bmatrix}
-x_{i+1}\\
-y_{i+1}\\
-z_{i+1}\\
-1
-\end{bmatrix}
-=
-\begin{bmatrix}
-\cos(\alpha) & -\sin(\alpha) & 0 & 0 \\ 
-\sin(\alpha) & \cos(\alpha)  & 0 & 0 \\ 
-0            & 0             & 1 & 0 \\ 
-0            & 0             & 0 & 1 
-\end{bmatrix}
-\begin{bmatrix}
-x_{i}\\
-y_{i}\\
-z_{i}\\
-1
-\end{bmatrix}
-$$
+Este projeto e uma biblioteca em Python para modelagem de manipuladores roboticos. Ele permite a criacao de frames de coordenadas, definicao de juntas (rotacionais) e o calculo da cinematica direta de robos articulados usando matrizes de transformacao homogenea 4x4.
 
-### Roll
-$$
-\begin{bmatrix}
-x_{i+1}\\
-y_{i+1}\\
-z_{i+1}\\
-1
-\end{bmatrix}
-=
-\begin{bmatrix}
-1 & 0            & 0             & 0 \\
-0 & \cos(\gamma) & -\sin(\gamma) & 0 \\ 
-0 & \sin(\gamma) & \cos(\gamma)  & 0 \\ 
-0 & 0            & 0             & 1
-\end{bmatrix}
-\begin{bmatrix}
-x_{i}\\
-y_{i}\\
-z_{i}\\
-1
-\end{bmatrix}
-$$
+## Estrutura do Projeto
 
-### Pitch
-$$
-\begin{bmatrix}
-x_{i+1}\\
-y_{i+1}\\
-z_{i+1}\\
-1
-\end{bmatrix}
-=
-\begin{bmatrix}
-\cos(\beta)  & 0 & \sin(\beta) & 0 \\ 
-0            & 1 & 0           & 0 \\ 
--\sin(\beta) & 0 & \cos(\beta) & 0 \\ 
-0            & 0 & 0           & 1 
-\end{bmatrix}
-\begin{bmatrix}
-x_{i}\\
-y_{i}\\
-z_{i}\\
-1
-\end{bmatrix}
-$$
+- `src/`: Contem o nucleo da biblioteca (logica de matrizes, juntas e robo).
+- `tests/`: Testes automatizados para garantir a fidelidade matematica.
+- `scripts/`: Exemplos praticos de uso (ex: robo planar do Enade).
+- `requirements.txt`: Lista de dependencias do projeto.
 
-# Robô
-## Base
--> Região estática
+## Instalacao
 
-## Junta
--> Adiciona graus de liberdade
+1. Certifique-se de ter o [Miniconda](https://docs.conda.io/en/latest/miniconda.html) ou Anaconda instalado.
+2. Clone o repositorio e entre na pasta do projeto:
+   ```bash
+   git clone https://github.com/DaniDanyDani/Manipuladores.git
+   cd Manipuladores
+3. Crie o ambiente virtual a partir do arquivo de configuracao:
+   ```bash
+   conda env create -f environment.yml
+4. Ative o ambiente criado:
+   ```bash
+   conda activate manipulador-env
 
-## Link
--> Une duas Juntas
+## Exemplo de uso
 
-## Atuador
--> Região de interesse do robô
+Para rodar o exemplo do robo planar de 3 juntas (baseado na questao do ENADE), utilize o script na pasta **scripts**:
+
+```bash
+python scripts/exemplo_robo_planar.py
+```
+
+### Funcionalidades Atuais
+- [x] Frames de Coordenadas: Suporte a translacao (x, y, z) e rotacao RPY (Roll, Pitch, Yaw).
+
+- [x] Juntas Rotacionais: Atuacao dinamica em torno dos eixos X, Y ou Z.
+
+- [x] Robo Articulado: Calculo de cadeia cinematica e obtencao de coordenadas globais XYZ.

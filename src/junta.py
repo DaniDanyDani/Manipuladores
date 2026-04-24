@@ -1,96 +1,43 @@
 from abc import ABC, abstractmethod
-from frame import Frame
 import numpy as np
+from src.frame import Frame
 
 class Junta(ABC):
-    # Adicionamos o 'axis="z"' como padrão no __init__
-    def __init__(self, name=None, numGL=None, frame=None, axis="z"):
-        self.name = "{0}" if name is None else name
-        self.numGL = 0 if numGL is None else numGL
-        self.frame = Frame() if frame is None else frame
+    def __init__(self, name: str, frame: Frame, axis: str = 'z'):
+        if not isinstance(name, str):
+            raise TypeError("Joint name must be a string.")
+        if not isinstance(frame, Frame):
+            raise TypeError("frame must be an instance of the Frame class.")
+        if axis not in ['x', 'y', 'z']:
+            raise ValueError("Actuation axis must be 'x', 'y', or 'z'.")
+
+        self.name = name
+        self.frame = frame
         self.axis = axis
-    
-    @property
-    def name(self):
-        return self.__name
-        
-    @name.setter
-    def name(self, valor):
-        self.__name = valor
 
-    @property
-    def numGL(self):
-        return self.__numGL
-        
-    @numGL.setter
-    def numGL(self, valor):
-        self.__numGL = valor
-
-    @property
-    def frame(self):
-        return self.__frame
-        
-    @frame.setter
-    def frame(self, valor):
-        self.__frame = valor if isinstance(valor, Frame) else Frame()
-    
-    @property
-    def axis(self):
-        return self.__axis
-        
-    @axis.setter
-    def axis(self, valor):
-        valor = str(valor).lower()
-        if valor not in ["x", "y", "z"]:
-            raise ValueError("O eixo deve ser 'x', 'y' ou 'z'.")
-        self.__axis = valor
+    def apply_actuation(self, value: float) -> np.ndarray:
+        if not isinstance(value, (int, float, np.number)):
+            raise TypeError("Actuation value must be a numeric type (int or float).")
+            
+        return self.frame.matrix @ self._calc_actuation_matrix(float(value))
 
     @abstractmethod
-    # Removemos o parâmetro 'axis' daqui!
-    def calcular_tMat(self, valor): 
-        """Calcula e retorna a Matriz de Transformação Homogênea"""
+    def _calc_actuation_matrix(self, value: float) -> np.ndarray:
         pass
 
 
-class JuntaRevolucao(Junta):
-    def __init__(self, name=None, numGL=None, frame=None, gl=None, axis="z"):
-        super().__init__(name, numGL, frame, axis)
-
-    def calcular_tMat(self, valor):
-        valor = np.deg2rad(valor)
-        if self.axis == "z":
-             self.__tMat = np.array([[np.cos(valor), -np.sin(valor), 0, 0],
-                                     [np.sin(valor), np.cos(valor), 0, 0],
-                                     [0, 0, 1, 0],
-                                     [0, 0, 0, 1]])
-        elif self.axis == "y":
-            self.__tMat = np.array([[np.cos(valor), 0, np.sin(valor), 0],
-                                     [0, 1, 0, 0],
-                                     [-np.sin(valor), 0, np.cos(valor), 0],
-                                     [0, 0, 0, 1]])
-        elif self.axis == "x":
-            self.__tMat = np.array([[1, 0, 0, 0],
-                                     [0, np.cos(valor), -np.sin(valor), 0],
-                                     [0, np.sin(valor), np.cos(valor), 0],
-                                     [0, 0, 0, 1]])
+class JuntaRotacional(Junta):
+    def _calc_actuation_matrix(self, angle: float) -> np.ndarray:
+        transformation_matrix = np.eye(4, dtype=float)
+        cos_q = np.cos(angle)
+        sin_q = np.sin(angle)
         
-        return self.__tMat
-    
-
-        
-class JuntaPrismatica(Junta):
-    def __init__(self, name=None, numGL=None, frame=None, gl=None, axis="z"):
-        super().__init__(name, numGL, frame, axis)
-
-    def calcular_tMat(self, valor):
-        self.__tMat = np.eye(4) 
-        
-        # Trocamos 'axis' por 'self.axis'
-        if self.axis == "x":
-            self.__tMat[0, 3] = valor
-        elif self.axis == "y":
-            self.__tMat[1, 3] = valor
-        elif self.axis == "z":
-            self.__tMat[2, 3] = valor
+        if self.axis == 'z':
+            transformation_matrix[0:2, 0:2] = [[cos_q, -sin_q], [sin_q, cos_q]]
+        elif self.axis == 'y':
+            transformation_matrix[0:3:2, 0:3:2] = [[cos_q, sin_q], [-sin_q, cos_q]]
+        elif self.axis == 'x':
+            transformation_matrix[1:3, 1:3] = [[1, 0], [0, 1]] # Mantém X intocado
+            transformation_matrix[1:3, 1:3] = [[cos_q, -sin_q], [sin_q, cos_q]]
             
-        return self.__tMat
+        return transformation_matrix

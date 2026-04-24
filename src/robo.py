@@ -1,72 +1,51 @@
 from abc import ABC, abstractmethod
-from junta import Junta
 import numpy as np
+from typing import List
+from src.junta import Junta
 
 class Robo(ABC):
-    def __init__(self, numJuntas, numLinks):
-        self.setNumJuntas(numJuntas)
-        self.setNumLinks(numLinks)
-    
-    def setNumJuntas(self, numJuntas):
-        self.__numJuntas = numJuntas
-    def setNumLinks(self, numLinks):
-        self.__numLinks = numLinks
-        
-    def getNumJuntas(self):
-        return self.__numJuntas
-    def getNumLinks(self):
-        return self.__numLinks
+    def __init__(self, num_joints: int, num_links: int):
+        if not isinstance(num_joints, int) or not isinstance(num_links, int):
+            raise TypeError("num_joints and num_links must be integers.")
+            
+        self.num_joints = num_joints
+        self.num_links = num_links
     
     @abstractmethod
-    def calcular_cinematica_direta(self, valores_das_juntas):
+    def forward_kinematics(self, joint_values: List[float]) -> List[np.ndarray]:
         pass
 
+
 class RoboArticulado(Robo):
-    def __init__(self, nome, lista_de_juntas):
-        super().__init__(len(lista_de_juntas), len(lista_de_juntas))
-        self.nome = nome
-        self.juntas = lista_de_juntas
-
-    def calcular_cinematica_direta(self, valores_das_juntas):
-        """
-        Recebe uma lista de ângulos/deslocamentos e retorna a posição (X, Y, Z) da ponta do robô.
-        """
-        if len(valores_das_juntas) != len(self.juntas):
-            raise ValueError("A quantidade de ângulos fornecida não bate com o número de juntas do robô.")
-
-        # Começamos com a Matriz Identidade 4x4 (Frame Global/Base do robô)
-        T_total = np.eye(4)
-
-        # Multiplicamos as matrizes em cadeia: T01 * T12 * T23 ...
-        for junta, valor in zip(self.juntas, valores_das_juntas):
-            T_atual = junta.calcular_tMat(valor) 
+    def __init__(self, name: str, joints: List[Junta]):
+        if not isinstance(name, str):
+            raise TypeError("Robot name must be a string.")
+        if not all(isinstance(j, Junta) for j in joints):
+            raise TypeError("joints must be a list containing only instances of the Junta class.")
             
-            T_total = T_total @ T_atual
+        super().__init__(len(joints), len(joints))
+        self.name = name
+        self.joints = joints
 
-        # A posição final X, Y e Z fica armazenada na última coluna das 3 primeiras linhas
-        posicao_x = T_total[0, 3]
-        posicao_y = T_total[1, 3]
-        posicao_z = T_total[2, 3]
+    def forward_kinematics(self, joint_values: List[float]) -> List[np.ndarray]:
+        if len(joint_values) != self.num_joints:
+            raise ValueError(f"Robot has {self.num_joints} joints, but received {len(joint_values)} actuation values.")
 
-        return np.array([posicao_x, posicao_y, posicao_z])
+        total_transformation = np.eye(4, dtype=float)
+        global_poses = []
 
+        for joint, value in zip(self.joints, joint_values):
+            local_transformation = joint.apply_actuation(value)
+            total_transformation = total_transformation @ local_transformation
+            global_poses.append(total_transformation)
 
-class RoboCartesiano(Robo):
-    def __init__(self, numJuntas, numLinks):
-        super().__init__(numJuntas, numLinks)
+        return global_poses
 
-
-class RoboEsferico(Robo):
-    def __init__(self, numJuntas, numLinks):
-        super().__init__(numJuntas, numLinks)
-
-
-class RoboCilindrico(Robo):
-    def __init__(self, numJuntas, numLinks):
-        super().__init__(numJuntas, numLinks)
-
-
-class RoboSCARA(Robo):
-    def __init__(self, numJuntas, numLinks):
-        super().__init__(numJuntas, numLinks)
-
+    def get_xyz_positions(self, joint_values: List[float]) -> List[np.ndarray]:
+        poses = self.forward_kinematics(joint_values)
+        positions = [np.zeros(3)] 
+        
+        for matrix in poses:
+            positions.append(matrix[0:3, 3])
+            
+        return positions

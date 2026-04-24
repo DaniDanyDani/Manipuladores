@@ -1,0 +1,6 @@
+name: manipulador-env
+channels:
+  - defaults
+dependencies:
+  - numpy
+prefix: /home/danii/miniconda3/envs/manipulador-env
