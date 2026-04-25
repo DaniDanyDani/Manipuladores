@@ -14,6 +14,10 @@ class Robo(ABC):
     @abstractmethod
     def forward_kinematics(self, joint_values: List[float]) -> List[np.ndarray]:
         pass
+    
+    @abstractmethod
+    def backward_kinematics(self, position_values: List[float]) -> List[np.ndarray]:
+        pass
 
 
 class RoboArticulado(Robo):
