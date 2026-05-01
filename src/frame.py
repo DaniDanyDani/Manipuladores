@@ -1,47 +1,25 @@
 import numpy as np
-from typing import Optional, List, Union
 
 class Frame:
-    def __init__(self, name: str, origin: Optional[Union[List[float], np.ndarray]] = None, rpy: Optional[Union[List[float], np.ndarray]] = None):
-        if not isinstance(name, str):
-            raise TypeError("Frame name must be a string.")
+    def __init__(self, T: np.ndarray, index: int = None):
+        """
+        T: matriz homogênea 4x4
+        """
+        self.T = T
+        self.index = index
 
-        self.name = name
-        self.origin = np.array(origin, dtype=float) if origin is not None else np.zeros(3)
-        self.rpy = np.array(rpy, dtype=float) if rpy is not None else np.zeros(3)
+    @classmethod
+    def from_rt(cls, R: np.ndarray, t: np.ndarray, index=None):
+        T = np.eye(4)
+        T[:3, :3] = R
+        T[:3, 3] = t
+        return cls(T, index)
 
-        if self.origin.shape != (3,):
-            raise ValueError("Origin must be a 1D array or list of length 3: [x, y, z].")
-        if self.rpy.shape != (3,):
-            raise ValueError("RPY must be a 1D array or list of length 3: [roll, pitch, yaw].")
+    def inv(self):
+        return Frame(np.linalg.inv(self.T), self.index)
 
-        self.matrix = self._build_matrix()
+    def __matmul__(self, other):
+        return Frame(self.T @ other.T)
 
-    def _build_matrix(self) -> np.ndarray:
-        roll, pitch, yaw = self.rpy
-        
-        rx = np.array([
-            [1, 0, 0], 
-            [0, np.cos(roll), -np.sin(roll)], 
-            [0, np.sin(roll), np.cos(roll)]
-        ], dtype=float)
-        
-        ry = np.array([
-            [np.cos(pitch), 0, np.sin(pitch)], 
-            [0, 1, 0], 
-            [-np.sin(pitch), 0, np.cos(pitch)]
-        ], dtype=float)
-        
-        rz = np.array([
-            [np.cos(yaw), -np.sin(yaw), 0], 
-            [np.sin(yaw), np.cos(yaw), 0], 
-            [0, 0, 1]
-        ], dtype=float)
-        
-        rotation_matrix = rz @ ry @ rx 
-        
-        transformation_matrix = np.eye(4, dtype=float)
-        transformation_matrix[0:3, 0:3] = rotation_matrix
-        transformation_matrix[0:3, 3] = self.origin
-        
-        return transformation_matrix
+    def __repr__(self):
+        return f"Frame(index={self.index})"
